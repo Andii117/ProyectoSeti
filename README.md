@@ -256,7 +256,6 @@ curl --location 'http://localhost:8080/api/pedidos' \
 # Notas técnicas
 
 * Se implementó una utilidad `SSLUtil` para deshabilitar validación SSL en entornos de desarrollo.
-* La transformación XML se realiza utilizando **Jackson XML**.
 * La aplicación está preparada para ejecutarse dentro de **contenedores Docker**.
 
 ---
