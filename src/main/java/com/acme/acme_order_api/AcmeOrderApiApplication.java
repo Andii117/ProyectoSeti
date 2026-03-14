@@ -9,9 +9,6 @@ public class AcmeOrderApiApplication {
 
 	public static void main(String[] args) {
 
-		// Desactiva validación SSL
-		SSLUtil.disableSSLVerification();
-
 		SpringApplication.run(AcmeOrderApiApplication.class, args);
 	}
 

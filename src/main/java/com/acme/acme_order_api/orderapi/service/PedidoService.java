@@ -10,6 +10,9 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+
 @Service
 public class PedidoService {
 
@@ -28,7 +31,14 @@ public class PedidoService {
         HttpEntity<String> entity = new HttpEntity<>(xmlRequest, headers);
 
         // Desactiva validación SSL
-        SSLUtil.disableSSLVerification();
+        try {
+            SSLUtil.disableSSLVerification();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        } catch (KeyManagementException e) {
+            throw new RuntimeException(e);
+        }
+
         ResponseEntity<String> response = restTemplate.exchange(
                 URL,
                 HttpMethod.POST,
