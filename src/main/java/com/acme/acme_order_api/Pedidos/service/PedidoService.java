@@ -1,11 +1,13 @@
-package com.acme.acme_order_api.orderapi.service;
+package com.acme.acme_order_api.Pedidos.service;
 
 import com.acme.acme_order_api.Pedidos.dto.EnviarPedido;
 import com.acme.acme_order_api.Pedidos.dto.EnviarPedidoRespuesta;
 import com.acme.acme_order_api.Pedidos.dto.PedidoRequest;
 import com.acme.acme_order_api.Pedidos.dto.PedidoResponse;
+import com.acme.acme_order_api.Pedidos.model.mapperXML.EnvioPedidoResponse;
+import com.acme.acme_order_api.Pedidos.model.mapperXML.SoapEnvelopeResponse;
 import com.acme.acme_order_api.SSLUtil.SSLUtil;
-import org.jspecify.annotations.NonNull;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -33,7 +35,7 @@ public class PedidoService {
      * @param request Información del pedido enviada por el cliente
      * @return PedidoResponse con el código de envío y estado del pedido
      */
-    public PedidoResponse procesarPedido(PedidoRequest request) {
+    public PedidoResponse procesarPedido(PedidoRequest request) throws Exception {
         desactivarSSL();
 
         String xmlRequest = construirXml(request);
@@ -116,19 +118,53 @@ public class PedidoService {
     }
 
     /**
-     * Convierte la respuesta XML del servicio externo a un objeto JSON.
+     * Convierte la respuesta XML recibida desde el servicio SOAP externo
+     * a un objeto {@link PedidoResponse} que será devuelto como JSON en la API REST.
      *
-     * @param xml XML recibido desde el servicio
-     * @return PedidoResponse con los datos mapeados
+     * <p>Este método realiza las siguientes operaciones:</p>
+     * <ol>
+     *     <li>Deserializa el XML SOAP usando {@link com.fasterxml.jackson.dataformat.xml.XmlMapper}
+     *         a objetos Java correspondientes al envelope, body y response.</li>
+     *     <li>Extrae los valores de código y mensaje del pedido.</li>
+     *     <li>Mapea esos valores a la clase {@link EnviarPedidoRespuesta} y luego a {@link PedidoResponse}.</li>
+     * </ol>
+     *
+     * @param xml La cadena XML recibida desde el servicio externo.
+     *            Debe cumplir con el formato SOAP esperado:
+     *            <pre>
+     *            &lt;soapenv:Envelope&gt;
+     *                &lt;soapenv:Body&gt;
+     *                    &lt;EnvioPedidoAcmeResponse&gt;
+     *                        &lt;EnvioPedidoResponse&gt;
+     *                            &lt;Codigo&gt;80375472&lt;/Codigo&gt;
+     *                            &lt;Mensaje&gt;Entregado exitosamente al cliente&lt;/Mensaje&gt;
+     *                        &lt;/EnvioPedidoResponse&gt;
+     *                    &lt;/EnvioPedidoAcmeResponse&gt;
+     *                &lt;/soapenv:Body&gt;
+     *            &lt;/soapenv:Envelope&gt;
+     *            </pre>
+     *
+     * @return {@link PedidoResponse} Objeto que representa la respuesta mapeada en JSON,
+     *         incluyendo el código de envío y el estado del pedido.
+     *
+     * @throws Exception si ocurre un error durante la deserialización del XML
+     *                   o si la estructura del XML no coincide con las clases de mapeo.
      */
-    private PedidoResponse convertirRespuesta(String xml) {
+    private PedidoResponse convertirRespuesta(String xml) throws Exception {
+        XmlMapper xmlMapper = new XmlMapper();
 
-        String codigo = extraerValor(xml, "Codigo");
-        String mensaje = extraerValor(xml, "Mensaje");
+        // Deserializamos el XML a objetos Java
+        SoapEnvelopeResponse envelope = xmlMapper.readValue(xml, SoapEnvelopeResponse.class);
 
+        EnvioPedidoResponse xmlResponse =
+                envelope.getBody()
+                        .getEnvioPedidoAcmeResponse()
+                        .getEnvioPedidoResponse();
+
+        // Mapeamos a nuestro objeto JSON
         EnviarPedidoRespuesta respuesta = new EnviarPedidoRespuesta();
-        respuesta.setCodigoEnvio(codigo);
-        respuesta.setEstado(mensaje);
+        respuesta.setCodigoEnvio(xmlResponse.getCodigo());
+        respuesta.setEstado(xmlResponse.getMensaje());
 
         PedidoResponse response = new PedidoResponse();
         response.setEnviarPedidoRespuesta(respuesta);

@@ -1,7 +1,7 @@
 package com.acme.acme_order_api.Pedidos.controllers;
 
 import com.acme.acme_order_api.Pedidos.dto.EnviarPedidoRespuesta;
-import com.acme.acme_order_api.orderapi.service.PedidoService;
+import com.acme.acme_order_api.Pedidos.service.PedidoService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
